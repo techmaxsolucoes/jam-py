@@ -471,6 +471,8 @@ class App(object):
                         reload_task(self)
                         update_events_code(self.admin)
                         self.privileges = None
+                except:
+                    self.log.exception('wsgi.py create_post_response error')
                 finally:
                     self.__task_locked = True
                     consts.MAINTENANCE = False
@@ -753,7 +755,7 @@ class App(object):
                                 if not ext in consts.upload_file_ext:
                                     r['error'] = '%s - %s' % (request.form.get('file_name'), consts.lang['upload_not_allowed'])
                                     self.log.error(r['error'])
-                            file_name = ('%s_%s%s') % (base, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S.%f'), ext)
+                            file_name = ('%s_%s%s') % (base, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S_%f'), ext)
                             file_name = secure_filename(file_name)
                             file_name = file_name.replace('?', '')
                             if task_id == 0:

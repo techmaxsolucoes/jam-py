@@ -2473,10 +2473,10 @@
             }
         },
 
-        create_menu_item: function(menu_item, parent, options) {
+        _create_menu_item: function(menu_item, parent, options) {
             if (menu_item.items.length) {
                 if (menu_item.items.length === 1 && !options.create_group_for_single_item) {
-                    this.create_menu_item(menu_item.items[0], parent, options);
+                    this._create_menu_item(menu_item.items[0], parent, options);
                 }
                 else {
                     let li,
@@ -2493,7 +2493,7 @@
                     ul = $('<ul class="dropdown-menu">');
                     li.append(ul);
                     for (let i = 0; i < menu_item.items.length; i++) {
-                        this.create_menu_item(menu_item.items[i], ul, options)
+                        this._create_menu_item(menu_item.items[i], ul, options)
                     }
                 }
             }
@@ -2509,68 +2509,87 @@
             }
         },
 
-        add_menu_item: function(custom_item, parent) {
-            let menu_item = {},
-                item = custom_item,
+        _add_item_menu: function(item, sub_items) {
+            let action;
+            if (item instanceof Group) {
+                if (item.visible) {
+                    item.each_item(function(i) {
+                        if (i.visible && i.can_view()) {
+                            sub_items.push(i);
+                        }
+                    });
+                }
+                else {
+                    return;
+                }
+            }
+            else {
+                if (item.visible && item.can_view()) {
+                    if (item instanceof Item) {
+                        action = function() {
+                            item.view(this.forms_container);
+                        }
+                    }
+                    else if (item instanceof Report) {
+                        action = function() {
+                            item.print(false);
+                        }
+                    }
+                }
+            }
+            return action;
+        },
+
+        _add_menu_item: function(custom_item, owner) {
+            let menu_item = {
+                    items: [],
+                    caption: undefined
+                },
                 sub_items = [];
-            if (custom_item instanceof Array) {
-                item = custom_item[0];
+            if (custom_item instanceof AbsrtactItem) {
+                let item = custom_item
+                if (menu_item.caption === undefined) {
+                    menu_item.caption = item.item_caption;
+                }
+                menu_item.action = this._add_item_menu(item, sub_items)
+            }
+            else if (custom_item instanceof Array) {
+                menu_item.caption = custom_item[0];
                 if (custom_item.length > 1) {
                     sub_items = custom_item[1]
                 }
             }
-            else if (custom_item instanceof Object && !(item instanceof AbsrtactItem)) {
-                for (item in custom_item) {
-                    if (custom_item[item] instanceof Array) {
-                        sub_items = custom_item[item];
+            else if (custom_item instanceof Object) {
+                for (let caption in custom_item) {
+                    menu_item.caption = caption;
+                    if (custom_item[caption] instanceof AbsrtactItem) {
+                        menu_item.action = this._add_item_menu(custom_item[caption], sub_items);
                     }
-                    else if (custom_item[item] instanceof AbsrtactItem) {
-                        sub_items[0] = custom_item[item];
-                    }
-                    else if (typeof custom_item[item] === "function") {
-                        menu_item.action = custom_item[item];
-                    }
-                }
-            }
-            menu_item.items = [];
-            if (item instanceof AbsrtactItem) {
-                menu_item.caption = item.item_caption;
-                if (item instanceof Group) {
-                    if (item.visible) {
-                        item.each_item(function(i) {
-                            if (i.visible && i.can_view()) {
-                                sub_items.push(i);
-                            }
-                        });
+                    else if (typeof custom_item[caption] === "function") {
+                        menu_item.action = custom_item[caption];
                     }
                     else {
-                        return;
-                    }
-                }
-                else {
-                    if (item.visible && item.can_view()) {
-                        if (item instanceof Item) {
-                            menu_item.action = function() {
-                                item.view(this.forms_container);
-                            }
-                        }
-                        else if (item instanceof Report) {
-                            menu_item.action = function() {
-                                item.print(false);
-                            }
-                        }
-                    }
-                    else {
-                        return;
+                        sub_items = custom_item[caption];
                     }
                 }
             }
-            else {
-                menu_item.caption = item;
+            else if (custom_item === '') {
+                menu_item.caption = '';
             }
-            parent.items.push(menu_item)
-            for (let i = 0; i < sub_items.length; i++) {
-                    this.add_menu_item(sub_items[i], menu_item);
+            if (menu_item.action || sub_items.length || menu_item.caption === '') {
+                owner.items.push(menu_item);
+                for (let i = 0; i < sub_items.length; i++) {
+                    let res = this._add_menu_item(sub_items[i], menu_item);
+                }
+            }
+        },
+
+        _clear_dividers: function(menu_item) {
+            if (menu_item.items.length && menu_item.items[menu_item.items.length - 1].caption === '') {
+                menu_item.items.pop();
+            }
+            for (let i = 0; i < menu_item.items.length; i++) {
+                this._clear_dividers(menu_item.items[i]);
             }
         },
 
@@ -2625,10 +2644,13 @@
             }
             menu_items.items = [];
             for (let i = 0; i < custom_menu.length; i++) {
-                this.add_menu_item(custom_menu[i], menu_items);
+                this._add_menu_item(custom_menu[i], menu_items);
             }
             for (let i = 0; i < menu_items.items.length; i++) {
-                this.create_menu_item(menu_items.items[i], $menu, options);
+                this._clear_dividers(menu_items.items[i]);
+            }
+            for (let i = 0; i < menu_items.items.length; i++) {
+                this._create_menu_item(menu_items.items[i], $menu, options);
             }
             $menu.find('.item-menu').on('click', (function(e) {
                 var action = $(this).data('action');
@@ -3788,7 +3810,7 @@
         });
         Object.defineProperty(this, "virtual_table", {
             get: function() {
-                return this._virtual_table;
+                return this.get_virtual_table();
             },
         });
         Object.defineProperty(this, "read_only", {
@@ -4035,8 +4057,15 @@
                             break;
                         case 'lookup_item':
                             if (val) {
-                                lookup_item = val;
+                                //~ lookup_item = val;
                                 val = val.ID
+                            }
+                            break;
+                        case 'field_interface':
+                            val = {
+                                do_not_sanitize: false,
+                                field_mask: "",
+                                textarea: false
                             }
                             break;
                     }
@@ -4388,6 +4417,15 @@
             }
             else {
                 return this._keep_history;
+            }
+        },
+
+        get_virtual_table: function() {
+            if (this.master) {
+                return task.item_by_ID(this.prototype_ID).virtual_table;
+            }
+            else {
+                return this._virtual_table;
             }
         },
 
@@ -5131,7 +5169,7 @@
                 async = callback ? true : false;
             }
             if (this.master) {
-                if (!this.disabled && this.master.record_count() > 0) {
+                if (!this.disabled && this.master.rec_count > 0) {
                     params.__master_id = this.master.ID;
                     params.__master_rec_id = this.master.field_by_name(this.master._primary_key).value;
                     if (this.master.is_new()) {
@@ -5142,6 +5180,9 @@
                             records = log['records']
                             fields = log['fields']
                             expanded = log['expanded']
+                        }
+                        else if (this.virtual_table) {
+                            records = [];
                         }
                     }
                     if (records !== undefined) {
@@ -7312,20 +7353,6 @@
                 if (detail._summary === undefined) {
                     this.calc_summary(detail);
                 }
-                //~ var self = this;
-                //~ clearTimeout(this._detail_changed_time_out);
-                //~ this._detail_changed_time_out = setTimeout(
-                    //~ function() {
-                        //~ detail._summary = undefined;
-                        //~ if (modified && self.on_detail_changed) {
-                            //~ self.on_detail_changed.call(self, self, detail);
-                        //~ }
-                        //~ if (detail._summary === undefined) {
-                            //~ self.calc_summary(detail);
-                        //~ }
-                    //~ },
-                    //~ 0
-                //~ );
             }
         },
 
@@ -7416,7 +7443,7 @@
                             else if (field.data_type === consts.FLOAT) {
                                 text = field.float_to_str(value)
                             }
-                            detail._summary[field_name] = text;
+                            detail._summary[field_name] = {text: text, value: value};
                         }
                     }
                 }
@@ -8543,6 +8570,11 @@
                 this.filter.update(this);
                 if (this.filter.owner.on_filter_changed) {
                     this.filter.owner.on_filter_changed.call(this.filter.owner, this.filter);
+                }
+            }
+            else if (this.report) {
+                if (this.report.on_param_changed) {
+                    this.owner.on_param_changed.call(this.owner, this, lookup_item);
                 }
             }
         },
@@ -10474,24 +10506,30 @@
                     }
                 }
                 copy.open({fields: fields, limit: limit}, function() {
-                    var dict = {}, sel = [];
-                    for (i = 0; i < self.item.selections.length; i++) {
-                        dict[self.item.selections[i]] = true;
+                    let dict = {};
+                    if (value) {
+                        for (i = 0; i < self.item.selections.length; i++) {
+                            dict[self.item.selections[i]] = true;
+                        }
+                        copy.each(function(c) {
+                            if (!dict[c._primary_key_field.value]) {
+                                self.item.selections.add(c._primary_key_field.value);
+                            }
+                        });
                     }
-                    self.item.selections.length = 0;
-                    copy.each(function(c) {
-                        if (value) {
+                    else {
+                        copy.each(function(c) {
                             dict[c._primary_key_field.value] = true;
+                        });
+                        let selections = []
+                        for (i = 0; i < self.item.selections.length; i++) {
+                            let sel = self.item.selections[i];
+                            if (!dict[sel]) {
+                                selections.push(sel);
+                            }
                         }
-                        else {
-                            delete dict[c._primary_key_field.value];
-                        }
-                    });
-                    for (var id in dict) {
-                        sel.push(parseInt(id, 10))
-                        //~ self.item.selections.add(parseInt(id, 10));
+                        self.item.selections = selections;
                     }
-                    self.item.selections = sel;
                     self.$table.find('td input.multi-select').prop('checked', value);
                     self.$element.find('input.multi-select-header').prop('checked',
                         self.selections_get_all_selected());
@@ -10706,6 +10744,28 @@
                 self.clicked(e, $this.closest('td'));
                 self.selections_set_selected(!checked);
                 $this.prop('checked', self.selections_get_selected());
+                if (e.shiftKey && self.prev_selected_rec_no !== undefined) {
+                    let sels = [],
+                        clone = self.item.clone(),
+                        min = self.prev_selected_rec_no,
+                        max = self.item.rec_no;
+                    if (self.prev_selected_rec_no > self.item.rec_no) {
+                        min = self.item.rec_no;
+                        max = self.prev_selected_rec_no;
+                    }
+                    while (min < max) {
+                        min += 1;
+                        clone.rec_no = min;
+                        if ($this.is(':checked')) {
+                            self.item.selections.add(clone._primary_key_field.value);
+                        }
+                        else {
+                            self.item.selections.remove(clone._primary_key_field.value);
+                        }
+                    }
+                    self.refresh();
+                }
+                self.prev_selected_rec_no = self.item.rec_no;
             });
 
             this.$table.on('click', 'td input.multi-select', function(e) {
@@ -11561,6 +11621,7 @@
 
         do_after_open: function() {
             var self = this;
+            this.prev_selected_rec_no = undefined;
             if (this.$table.is(':visible')) {
                 this.init_table();
                 this.sync_freezed();
@@ -11612,9 +11673,21 @@
         update_summary: function() {
             var field_name;
             for (field_name in this.item._summary) {
-                this.$foot.find('div.' + field_name).text(this.item._summary[field_name]);
+                let field = this.item.field_by_name(field_name),
+                    text = this.item._summary[field_name].text,
+                    value = this.item._summary[field_name].value,
+                    new_text = '';
+                if (this.item.on_field_get_summary) {
+                    if (field.data_type === consts.CURRENCY) {
+                        value = task.round(value, task.locale.FRAC_DIGITS);
+                    }
+                    new_text = this.item.on_field_get_summary.call(this.item, field, value);
+                }
+                if (!new_text) {
+                    new_text = text;
+                }
+                this.$foot.find('div.' + field_name).html(new_text);
             }
-
         },
 
         calc_summary: function(callback) {
@@ -11693,6 +11766,7 @@
                     params.__master_id = this.item.master.ID;
                     params.__master_rec_id = this.item.master.field_by_name(this.item.master._primary_key).value;
                 }
+                this.item._summary = {};
                 copy.open({expanded: expanded, fields: sum_fields, funcs: funcs, params: params},
                     function() {
                         var i,
@@ -11702,12 +11776,13 @@
                                 total_records = f.data;
                             }
                             else if (f.field_name !== search_field) {
-                                self.$foot.find('div.' + f.field_name).text(f.display_text);
+                                self.item._summary[f.field_name] = {text: f.display_text, value: f.value};
                             }
                         });
                         for (i = 0; i < count_fields.length; i++) {
-                            self.$foot.find('div.' + count_fields[i]).text(total_records);
+                            self.item._summary[count_fields[i]] = {text: total_records + '', value: total_records};
                         }
+                        self.update_summary();
                         if (callback) {
                             callback.call(this, total_records);
                         }
@@ -11801,22 +11876,24 @@
                 field = this.item.field_by_name(td.data('field_name')),
                 $row = td.parent();
             rec = this.record_by_row($row);
-            if (this.edit_mode && rec !== this.item.rec_no) {
-                if (!this.item.is_edited()) {
-                    this.item.edit();
+            if (rec !== undefined) {
+                if (this.edit_mode && rec !== this.item.rec_no) {
+                    if (!this.item.is_edited()) {
+                        this.item.edit();
+                    }
+                    this.flush_editor();
+                    this.item.post();
                 }
-                this.flush_editor();
-                this.item.post();
-            }
-            this.item.rec_no = rec;
-            if (!this.editing && !this.is_focused()) {
-                this.focus();
-            }
-            if (field) {
-                this.set_selected_field(field);
-            }
-            if (e.type === "dblclick") {
-                this.do_on_edit(field);
+                this.item.rec_no = rec;
+                if (!this.editing && !this.is_focused()) {
+                    this.focus();
+                }
+                if (field) {
+                    this.set_selected_field(field);
+                }
+                if (e.type === "dblclick") {
+                    this.do_on_edit(field);
+                }
             }
         },
 

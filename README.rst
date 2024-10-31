@@ -21,6 +21,9 @@
 Jam.py Application Builder (web framework)
 ================
 
+No longer actively developed, please use https://github.com/jam-py-v5/jam-py
+=================================================================================
+
 
 From an idea of a web database application to a live website in no time, for free
 =================================================================================
@@ -49,18 +52,20 @@ Please watch the
 `Jam.py framework applications <https://youtu.be/qkJvGlgoabU>`_  video
 to see some applications written in Jam.py.
 
-More demos on Heroku:
+More demos on PythonAnywhere:
 
-* `The RedHat Satellite 5.x Dashboard utility Demo <https://redhatsatellite.herokuapp.com>`_
-* `The Postfix email aliases utility Demo <https://jampy-aliases.herokuapp.com>`_
-* `The Samba Shares utility Demo <https://sambashares.herokuapp.com>`_
+* `SAP Theme Demo <https://jampyapp.pythonanywhere.com/>`_
+* `Personal Account Ledger from MS Access template <https://msaccess.pythonanywhere.com/>`_
+* `NorthWind Traders from MS Access template (wip) <https://northwind.pythonanywhere.com/>`_
+* `The ERP POC Demo with Italian and English translations <https://sem.pythonanywhere.com/>`_
+* `Assets/Parts Application (wip, currently Jam V7 Demo) <https://jampy.pythonanywhere.com>`_
+* `Machine Learning (wip) <https://mlearning.pythonanywhere.com>`_
+* `Auto Parts Sales for Brazilian Market (Portuguese) <https://carparts.pythonanywhere.com>`_
+* `Resourcing and Billing Application from MS Access DB (wip) <https://resourcingandbilling.pythonanywhere.com>`_
+* `Job Positions tracking App from MS Access DB (wip) <https://positionstracking.pythonanywhere.com>`_
+* `Kanban/Tasks Application <https://kanban.pythonanywhere.com>`_
+* `Assets Inventory Application (wip) <https://assetinventory.pythonanywhere.com>`_
 
-`Here <https://youtu.be/pQYer6po820>`_ is a video showing how to publish a
-Jam.py application from GitHub repo on Heroku
-
-Demo on PythonAnywhere:
-
-* `Jam.py Assets/Parts Application (wip) <https://jampy.pythonanywhere.com>`_
 
 Jam.py alternative site:
 
@@ -96,14 +101,14 @@ the client utilizes `JavaScript <https://developer.mozilla.org/en/docs/Web/JavaS
 * Open framework. You can use any Javascript/Python libraries.
 
 * Rich, informative reports. Band-oriented report generation based on
-  `LibreOffice <https://www.libreoffice.org/">`_ templates.
+  `LibreOffice <https://www.libreoffice.org/>`_ templates.
 
 * Charts. You can use free `jsCharts <http://www.jscharts.com/>`_ library
   or any javascript charting library to create charts to represent and analyze your application data.
 
 * Allows to save audit trail/change history made by users
 
-* Predifined css themes.
+* Predefined css themes.
 
 * Develop and test locally update remotely. Jam.py has Export and Import
   utilities that allow developer to store all metadata (database structures,
